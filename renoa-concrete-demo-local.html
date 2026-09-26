@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Smart Concrete Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #E7E8E6;
+    --surface: #FFFFFF;
+    --surface-alt: #DEDFDC;
+    --ink: #1D2226;
+    --ink-soft: #565F63;
+    --steel: #2E4756;
+    --steel-light: #4C6E82;
+    --orange: #E85420;
+    --line: #C7C9C5;
+    --sans: 'IBM Plex Sans', Tahoma, sans-serif;
+    --mono: 'JetBrains Mono', ui-monospace, monospace;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #16191B; --surface: #1F2426; --surface-alt: #262C2F;
+      --ink: #E9EAE7; --ink-soft: #A2A9AC; --steel: #6E93A8;
+      --steel-light: #8FB2C4; --orange: #FF7A45; --line: #33393C;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16191B; --surface: #1F2426; --surface-alt: #262C2F;
+    --ink: #E9EAE7; --ink-soft: #A2A9AC; --steel: #6E93A8;
+    --steel-light: #8FB2C4; --orange: #FF7A45; --line: #33393C;
+  }
+  html { scroll-padding-top: env(safe-area-inset-top, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: var(--sans); line-height: 1.6;
+  }
+  .wrap { max-width: 760px; margin: 0 auto; padding: 28px 20px 64px; }
+
+  header { padding: 20px 4px 32px; border-bottom: 1px solid var(--line); margin-bottom: 32px; }
+  .badge {
+    display: inline-block; font-family: var(--mono); font-size: 12px;
+    color: var(--ink-soft); border: 1px solid var(--line); border-radius: 3px;
+    padding: 3px 8px; margin-bottom: 14px;
+  }
+  h1 {
+    font-size: clamp(26px, 5vw, 36px); font-weight: 700; margin: 0 0 10px;
+    letter-spacing: -0.01em;
+  }
+  header p { color: var(--ink-soft); margin: 0; font-size: 15px; max-width: 52ch; }
+
+  section { margin-bottom: 44px; }
+  .section-head { margin-bottom: 16px; }
+  .section-head h2 { font-size: 20px; margin: 0 0 4px; font-weight: 600; }
+  .section-head span { color: var(--ink-soft); font-size: 14px; }
+
+  .card {
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 10px; padding: 22px;
+  }
+
+  label { display: block; font-size: 13px; color: var(--ink-soft); margin-bottom: 6px; }
+  textarea, input, select {
+    width: 100%; font-family: var(--sans); font-size: 15px; color: var(--ink);
+    background: var(--bg); border: 1px solid var(--line); border-radius: 6px;
+    padding: 10px 12px; outline: none;
+  }
+  textarea:focus, input:focus, select:focus { border-color: var(--steel-light); }
+  textarea { resize: vertical; min-height: 76px; }
+
+  .row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 12px; }
+  .row > div { flex: 1 1 130px; }
+
+  button {
+    font-family: var(--sans); font-size: 14px; font-weight: 600; cursor: pointer;
+    border: none; border-radius: 6px; padding: 11px 18px;
+  }
+  .btn-primary { background: var(--steel); color: #fff; }
+  .btn-primary:hover { background: var(--steel-light); }
+  .btn-ghost { background: transparent; color: var(--steel); border: 1px solid var(--line); }
+  .btn-ghost:hover { border-color: var(--steel-light); }
+  button:disabled { opacity: 0.5; cursor: default; }
+  .btn-row { display: flex; gap: 10px; margin-top: 14px; flex-wrap: wrap; }
+
+  .divider { text-align: center; color: var(--ink-soft); font-size: 13px; margin: 18px 0; position: relative; }
+  .divider::before, .divider::after {
+    content: ""; position: absolute; top: 50%; width: 40%; height: 1px; background: var(--line);
+  }
+  .divider::before { left: 0; } .divider::after { right: 0; }
+
+  table { width: 100%; border-collapse: collapse; margin-top: 16px; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--ink-soft); font-weight: 500; font-size: 13px; }
+  td.num, th.num { font-family: var(--mono); text-align: right; }
+  td button { padding: 4px 8px; font-size: 12px; }
+
+  .summary {
+    margin-top: 18px; padding-top: 18px; border-top: 1px dashed var(--line);
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;
+  }
+  .stat .num { font-family: var(--mono); font-size: 24px; font-weight: 600; color: var(--steel); }
+  .stat .lbl { font-size: 12.5px; color: var(--ink-soft); margin-top: 2px; }
+
+  .result-box {
+    margin-top: 18px; padding: 18px; background: var(--surface-alt); border-radius: 8px;
+    display: none;
+  }
+  .result-box.show { display: block; }
+  .mpa-value { font-family: var(--mono); font-size: 40px; font-weight: 700; color: var(--orange); line-height: 1; }
+  .mpa-label { color: var(--ink-soft); font-size: 13px; margin-top: 4px; }
+  .gauge { height: 8px; background: var(--line); border-radius: 4px; margin: 14px 0 10px; overflow: hidden; }
+  .gauge-fill { height: 100%; background: var(--steel); border-radius: 4px; transition: width .5s ease; }
+  .grade-tag {
+    display: inline-block; font-size: 13px; padding: 3px 10px; border-radius: 4px;
+    background: var(--steel); color: #fff; margin-top: 4px;
+  }
+  .note {
+    font-size: 12.5px; color: var(--ink-soft); margin-top: 14px; line-height: 1.6;
+    border-left: 2px solid var(--line); padding-left: 10px;
+  }
+  .empty { color: var(--ink-soft); font-size: 14px; padding: 10px 0; }
+  .status { font-size: 13px; color: var(--steel-light); margin-top: 10px; min-height: 18px; }
+
+  @media (max-width: 480px) {
+    .row > div { flex: 1 1 100%; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <span class="badge">Demo — Renoa</span>
+    <h1>Smart Concrete Calculator</h1>
+    <p>Estimate pour quantity and price in seconds, and predict a mix's strength before you pour.</p>
+  </header>
+
+  <section id="calc-section">
+    <div class="section-head">
+      <h2>Smart Calculator</h2>
+      <span>Describe your order, or add items manually</span>
+    </div>
+    <div class="card">
+      <label for="ai-text">Order description (optional — for AI analysis)</label>
+      <textarea id="ai-text" placeholder="Example: a 20x15 slab, 25cm thick, and 12 footings 1.5x1.5x0.6"></textarea>
+      <div class="btn-row">
+        <button class="btn-primary" id="ai-btn" onclick="analyzeText()">Analyze with AI</button>
+      </div>
+      <div class="status" id="ai-status"></div>
+
+      <div class="divider">or add an item manually</div>
+
+      <div class="row">
+        <div>
+          <label for="price-per-m3">Price per m³ (SAR)</label>
+          <input id="price-per-m3" type="number" step="1" value="250" oninput="render()">
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label for="el-type">Element type</label>
+          <select id="el-type">
+            <option value="Footing">Footing</option>
+            <option value="Slab">Slab / roof</option>
+            <option value="Column">Column</option>
+            <option value="Retaining wall">Retaining wall</option>
+          </select>
+        </div>
+        <div><label for="el-l">Length (m)</label><input id="el-l" type="number" step="0.1" placeholder="5"></div>
+        <div><label for="el-w">Width (m)</label><input id="el-w" type="number" step="0.1" placeholder="3"></div>
+        <div><label for="el-h">Thickness/height (m)</label><input id="el-h" type="number" step="0.01" placeholder="0.25"></div>
+        <div><label for="el-q">Quantity</label><input id="el-q" type="number" step="1" value="1"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-ghost" onclick="addManualItem()">Add item</button>
+      </div>
+
+      <div id="items-empty" class="empty">No items added yet.</div>
+      <table id="items-table" style="display:none">
+        <thead>
+          <tr><th>Item</th><th class="num">Volume (m³)</th><th></th></tr>
+        </thead>
+        <tbody id="items-body"></tbody>
+      </table>
+
+      <div class="summary" id="summary" style="display:none">
+        <div class="stat"><div class="num" id="sum-vol">0</div><div class="lbl">Total m³ (incl. 5% waste)</div></div>
+        <div class="stat"><div class="num" id="sum-trucks">0</div><div class="lbl">Estimated trucks</div></div>
+        <div class="stat"><div class="num" id="sum-price">0</div><div class="lbl">Estimated price (SAR)</div></div>
+      </div>
+      <div class="note">Adjust the price per m³ above to match your actual pricing — the default (250 SAR) is for demo purposes only.</div>
+    </div>
+  </section>
+
+  <section id="model-section">
+    <div class="section-head">
+      <h2>Strength Prediction Model</h2>
+      <span>Enter mix components (kg per m³) to estimate compressive strength</span>
+    </div>
+    <div class="card">
+      <div class="row">
+        <div><label for="m-cement">Cement</label><input id="m-cement" type="number" value="300"></div>
+        <div><label for="m-slag">Blast furnace slag</label><input id="m-slag" type="number" value="0"></div>
+        <div><label for="m-flyash">Fly ash</label><input id="m-flyash" type="number" value="0"></div>
+        <div><label for="m-water">Water</label><input id="m-water" type="number" value="190"></div>
+      </div>
+      <div class="row">
+        <div><label for="m-sp">Superplasticizer</label><input id="m-sp" type="number" value="0"></div>
+        <div><label for="m-coarse">Coarse aggregate</label><input id="m-coarse" type="number" value="1000"></div>
+        <div><label for="m-fine">Fine aggregate</label><input id="m-fine" type="number" value="800"></div>
+        <div><label for="m-age">Age (days)</label><input id="m-age" type="number" value="28"></div>
+      </div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="predictStrength()">Predict strength</button>
+      </div>
+
+      <div class="result-box" id="result-box">
+        <div class="mpa-value" id="mpa-value">0</div>
+        <div class="mpa-label">MPa — predicted compressive strength</div>
+        <div class="gauge"><div class="gauge-fill" id="gauge-fill" style="width:0%"></div></div>
+        <span class="grade-tag" id="grade-tag">—</span>
+      </div>
+      <div class="note">This is an approximation based on a simplified cement/water-ratio formula, for demo purposes. The real trained model (Gradient Boosting, R² ≈ 0.94) is saved as a Python file; the production version would call it through an API instead of this formula.</div>
+    </div>
+  </section>
+
+</div>
+
+<script>
+  let items = [];
+
+  function volumeOf(it) { return it.l * it.w * it.h * it.q; }
+
+  function gradeFor(type) {
+    if (type === 'Slab') return 'C30';
+    if (type === 'Column') return 'C30';
+    return 'C25';
+  }
+
+  function addManualItem() {
+    const type = document.getElementById('el-type').value;
+    const l = parseFloat(document.getElementById('el-l').value);
+    const w = parseFloat(document.getElementById('el-w').value);
+    const h = parseFloat(document.getElementById('el-h').value);
+    const q = parseFloat(document.getElementById('el-q').value) || 1;
+    if (!l || !w || !h) return;
+    items.push({ type, l, w, h, q });
+    render();
+    document.getElementById('el-l').value = '';
+    document.getElementById('el-w').value = '';
+    document.getElementById('el-h').value = '';
+    document.getElementById('el-q').value = '1';
+  }
+
+  function removeItem(i) { items.splice(i, 1); render(); }
+
+  function render() {
+    const body = document.getElementById('items-body');
+    const table = document.getElementById('items-table');
+    const empty = document.getElementById('items-empty');
+    const summary = document.getElementById('summary');
+    body.innerHTML = '';
+    if (items.length === 0) {
+      table.style.display = 'none'; empty.style.display = 'block'; summary.style.display = 'none';
+      return;
+    }
+    empty.style.display = 'none'; table.style.display = 'table'; summary.style.display = 'grid';
+    let totalVol = 0;
+    items.forEach((it, i) => {
+      const v = volumeOf(it);
+      totalVol += v;
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td>${it.type} — ${it.q}× (${it.l}×${it.w}×${it.h})<br><span style="color:var(--ink-soft);font-size:12px">${gradeFor(it.type)} suggested</span></td>
+        <td class="num">${v.toFixed(2)}</td>
+        <td><button class="btn-ghost" onclick="removeItem(${i})">Remove</button></td>`;
+      body.appendChild(tr);
+    });
+    const pricePerM3 = parseFloat(document.getElementById('price-per-m3').value) || 0;
+    const withWaste = totalVol * 1.05;
+    const trucks = Math.max(1, Math.ceil(withWaste / 8));
+    const price = Math.round(withWaste * pricePerM3);
+    document.getElementById('sum-vol').textContent = withWaste.toFixed(2);
+    document.getElementById('sum-trucks').textContent = trucks;
+    document.getElementById('sum-price').textContent = price.toLocaleString('en-US');
+  }
+
+  async function analyzeText() {
+    const statusEl = document.getElementById('ai-status');
+    const btn = document.getElementById('ai-btn');
+    const text = document.getElementById('ai-text').value.trim();
+    if (!text) { statusEl.textContent = 'Write an order description first.'; return; }
+
+    if (typeof claude === 'undefined' || !claude.use) {
+      statusEl.textContent = 'AI analysis is only available in the claude.ai version — use manual entry here.';
+      return;
+    }
+    const sample = await claude.use('sample');
+    if (!sample) { statusEl.textContent = 'AI analysis isn\u2019t available in this demo — use manual entry instead.'; return; }
+
+    btn.disabled = true; statusEl.textContent = 'Analyzing...';
+    try {
+      const prompt = `Extract concrete elements from the following text and return ONLY JSON, in this shape:
+[{"type":"Footing, Slab, Column, or Retaining wall","l":number,"w":number,"h":number,"q":number}]
+All dimensions in meters. If thickness is given in centimeters, convert to meters. If quantity isn't stated, use 1.
+
+Text: """${text}"""`;
+      const data = await sample.json(prompt, { modelTier: 'quick' });
+      if (Array.isArray(data)) {
+        data.forEach(d => {
+          if (d.l && d.w && d.h) items.push({
+            type: d.type || 'Footing', l: +d.l, w: +d.w, h: +d.h, q: +d.q || 1
+          });
+        });
+        render();
+        statusEl.textContent = `Added ${data.length} item(s) automatically.`;
+      } else {
+        statusEl.textContent = 'Couldn\u2019t parse that description — try rephrasing, or add the item manually.';
+      }
+    } catch (e) {
+      statusEl.textContent = 'Analysis failed — try again, or add the item manually.';
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // Change this to your deployed API URL (e.g. https://concrete-api.onrender.com)
+  // when hosting the API and this page separately instead of running both locally.
+  const API_URL = 'http://localhost:8000';
+
+  function localHeuristic(cement, slag, flyash, water, sp, age) {
+    const cementitious = cement + 0.5 * slag + 0.4 * flyash;
+    const effectiveWater = water * (1 - Math.min(0.15, 0.01 * sp));
+    const ratio = cementitious / Math.max(effectiveWater, 1);
+    let fc = 26 * (ratio - 0.5);
+    const ageFactor = (age / (4 + 0.85 * age)) / (28 / (4 + 0.85 * 28));
+    fc = fc * ageFactor;
+    return Math.max(2, Math.min(80, fc));
+  }
+
+  function showResult(fc, grade) {
+    document.getElementById('mpa-value').textContent = fc.toFixed(2);
+    document.getElementById('gauge-fill').style.width = Math.min(100, (fc / 60) * 100) + '%';
+    document.getElementById('grade-tag').textContent = grade;
+    document.getElementById('result-box').classList.add('show');
+  }
+
+  function gradeForMpa(fc) {
+    if (fc >= 50) return 'Very high';
+    if (fc >= 35) return 'High';
+    if (fc >= 20) return 'Standard structural';
+    return 'Low';
+  }
+
+  async function predictStrength() {
+    const cement = parseFloat(document.getElementById('m-cement').value) || 0;
+    const slag = parseFloat(document.getElementById('m-slag').value) || 0;
+    const flyash = parseFloat(document.getElementById('m-flyash').value) || 0;
+    const water = parseFloat(document.getElementById('m-water').value) || 1;
+    const sp = parseFloat(document.getElementById('m-sp').value) || 0;
+    const coarse = parseFloat(document.getElementById('m-coarse').value) || 0;
+    const fine = parseFloat(document.getElementById('m-fine').value) || 0;
+    const age = parseFloat(document.getElementById('m-age').value) || 28;
+
+    const noteEl = document.querySelector('#model-section .note');
+    try {
+      const res = await fetch(API_URL + '/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cement, blast_furnace_slag: slag, fly_ash: flyash, water,
+          superplasticizer: sp, coarse_aggregate: coarse, fine_aggregate: fine, age
+        })
+      });
+      if (!res.ok) throw new Error('bad status');
+      const data = await res.json();
+      showResult(data.predicted_strength_mpa, data.grade_label);
+      noteEl.textContent = 'This is a prediction from the real trained model (Gradient Boosting, R² ≈ 0.94) via a local API.';
+    } catch (e) {
+      const fc = localHeuristic(cement, slag, flyash, water, sp, age);
+      showResult(fc, gradeForMpa(fc));
+      noteEl.textContent = 'Couldn\u2019t reach the API (start the server at ' + API_URL + ') — showing an approximation instead of the real model.';
+    }
+  }
+</script>
+</body>
+</html>
